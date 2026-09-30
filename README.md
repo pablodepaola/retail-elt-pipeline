@@ -293,32 +293,12 @@ and the CD pipeline publishes marts on every successful run.
 
 ---
 
-## OCI Data Engineer portfolio (cloud-only labs)
-
-Step-by-step tutorials for five Oracle Cloud projects (no local database required):
-
-**[`docs/oci-portfolio/README.md`](docs/oci-portfolio/README.md)**
-
-| # | Project | OCI services |
-|---|---------|----------------|
-| 1 | Enterprise DWH + ETL | Autonomous ADW, OCI Data Integration |
-| 2 | Real-time CDC | OCI GoldenGate, ATP → ADW |
-| 3 | ATP → ADW migration | Data Pump, Object Storage |
-| 4 | PL/SQL performance tuning | Autonomous DB, Performance Hub |
-| 5 | Hybrid lakehouse | Object Storage, Data Flow, ATP/ADW |
-
-SQL scripts and extract helpers live in [`oci-portfolio/`](oci-portfolio/).
-
----
-
 ## Repository layout
 
 ```
 pipeline/        Python ELT: extract, load, contracts, GE gate, dbt runner, Oracle publish, CLI
 dbt/             dbt project: staging / intermediate / marts, seeds, snapshot, tests, contracts
 oracle/          Oracle DDL + APEX build guide + ready-to-paste region SQL
-oci-portfolio/   OCI lab SQL, Spark/extract scripts, data contracts
-docs/oci-portfolio/  Five cloud-only step-by-step tutorials
 tests/           pytest unit tests (contracts, watermark, window planning)
 .github/         CI (PR), CD (scheduled + backfill), docs (Pages) workflows
 data/sample/     committed Olist-schema sample so CI runs with no credentials
