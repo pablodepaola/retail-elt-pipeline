@@ -36,5 +36,9 @@ oracle/wallet/
 *.env
 .env
 
+# OCI lab drafts (kept local until completed and published separately)
+docs/oci-portfolio/
+oci-portfolio/
+
 # OS
 .DS_Store
