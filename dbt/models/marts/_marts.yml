@@ -1,0 +1,141 @@
+version: 2
+
+models:
+  # ----------------------------------------------------------------- dimensions
+  - name: dim_product
+    description: Product dimension with category (EN) and SYNTHETIC cost ratio.
+    config:
+      contract: { enforced: true }
+    columns:
+      - name: product_id
+        data_type: varchar
+        constraints: [{ type: not_null }]
+        data_tests: [unique]
+      - name: category_pt
+        data_type: varchar
+      - name: category_en
+        data_type: varchar
+        data_tests: [not_null]
+      - name: cost_ratio
+        data_type: double
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1 }
+
+  # ----------------------------------------------------------------------- facts
+  - name: fct_daily_sales
+    description: >
+      DATA CONTRACT (enforced). Grain: one row per (order_date, product_id).
+      Revenue is real Olist data; cogs/gross_margin are synthetic (proxy).
+    config:
+      contract: { enforced: true }
+    columns:
+      - name: order_date
+        data_type: date
+        constraints: [{ type: not_null }]
+      - name: product_id
+        data_type: varchar
+        constraints: [{ type: not_null }]
+        data_tests:
+          - relationships: { to: ref('dim_product'), field: product_id }
+      - name: category_pt
+        data_type: varchar
+      - name: category_en
+        data_type: varchar
+        data_tests: [not_null]
+      - name: units
+        data_type: bigint
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0 }
+      - name: revenue
+        data_type: double
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0 }
+      - name: cogs
+        data_type: double
+      - name: gross_margin
+        data_type: double
+      - name: margin_pct
+        data_type: double
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: -1, max_value: 1 }
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_date, product_id]
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
+
+  # ------------------------------------------------------------------ exec marts
+  - name: mart_exec_kpis
+    description: Daily executive KPI line (headline tiles + trend).
+    config:
+      contract: { enforced: true }
+    columns:
+      - name: order_date
+        data_type: date
+        constraints: [{ type: not_null }]
+        data_tests: [unique]
+      - name: active_skus
+        data_type: bigint
+      - name: units
+        data_type: bigint
+      - name: revenue
+        data_type: double
+      - name: gross_margin
+        data_type: double
+      - name: margin_pct
+        data_type: double
+
+  - name: mart_sales_by_category
+    description: "Insight #1: revenue + margin by category over time."
+    columns:
+      - name: margin_pct
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: -1, max_value: 1 }
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_date, category_en]
+
+  - name: mart_inventory_health
+    description: "Insight #2/#3: latest stockout/overstock risk + sell-through per product."
+    config:
+      contract: { enforced: true }
+    columns:
+      - name: product_id
+        data_type: varchar
+        constraints: [{ type: not_null }]
+        data_tests: [unique]
+      - name: category_en
+        data_type: varchar
+      - name: as_of_date
+        data_type: date
+      - name: on_hand_units
+        data_type: bigint
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0 }
+      - name: reorder_point
+        data_type: bigint
+      - name: days_of_supply
+        data_type: double
+      - name: sell_through_rate
+        data_type: double
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1 }
+      - name: is_stockout
+        data_type: boolean
+      - name: is_stockout_risk
+        data_type: boolean
+      - name: is_overstock
+        data_type: boolean
+      - name: inventory_status
+        data_type: varchar
+        data_tests:
+          - accepted_values:
+              values: [STOCKOUT, REORDER_NOW, OVERSTOCK, HEALTHY]
+
+  - name: mart_pipeline_status
+    description: Single-row observability tile (last refreshed / tests / freshness).
+    columns:
+      - name: pipeline_health
+        data_tests:
+          - accepted_values: { values: [PASSING, FAILING, UNKNOWN] }

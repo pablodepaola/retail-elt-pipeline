@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Cleaned, deduped order headers with a typed order_date.
+    columns:
+      - name: order_id
+        description: Order natural key.
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests: [not_null]
+      - name: order_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [delivered, shipped, canceled, unavailable, invoiced,
+                       processing, created, approved]
+      - name: order_date
+        description: Business date used for incremental marts.
+        data_tests: [not_null]
+
+  - name: stg_order_items
+    description: Cleaned, deduped order lines (one row == one unit).
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: product_id
+        data_tests: [not_null]
+      - name: item_price
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0 }
+      - name: freight_value
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0 }
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_id, order_item_id]
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        data_tests: [not_null, unique]
+
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+
+  - name: stg_category_translation
+    columns:
+      - name: category_pt
+        data_tests: [not_null, unique]
+      - name: category_en
+        data_tests: [not_null]

@@ -1,0 +1,16 @@
+# Core ELT runtime — pinned for reproducible CI/CD (verified on Python 3.13)
+# Warehouse + transform
+dbt-core==1.11.11
+dbt-duckdb==1.10.1
+duckdb==1.5.3
+
+# Extract / load
+pandas==3.0.3
+pyarrow==24.0.0
+PyYAML==6.0.3
+
+# Data quality gate at the raw boundary
+great_expectations==1.18.0
+
+# Serving publish: load marts into Oracle Autonomous DB for APEX
+oracledb==4.0.1

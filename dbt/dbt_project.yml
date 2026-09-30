@@ -1,0 +1,59 @@
+name: retail_elt
+version: "1.0.0"
+config-version: 2
+
+profile: retail_elt
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# Ensure the operational audit table exists so mart_pipeline_status can read it
+# even on a cold `dbt build` (it is normally populated by the Python orchestrator).
+on-run-start:
+  - "create schema if not exists meta"
+  - "create table if not exists meta.pipeline_runs (run_id varchar, run_started_at timestamp, run_finished_at timestamp, mode varchar, window_start date, window_end date, rows_extracted bigint, dbt_tests_passed integer, dbt_tests_failed integer, status varchar)"
+
+# --------------------------------------------------------------------------- #
+# Synthetic business parameters (Olist has no cost/inventory). Mirrors
+# pipeline/config.py SyntheticParams. Documented as a proxy in the README.
+# --------------------------------------------------------------------------- #
+vars:
+  # Inventory simulation (deterministic, no recursion -> window arithmetic only)
+  opening_stock_days: 45
+  restock_interval_days: 14
+  restock_cover_days: 21
+  reorder_point_days: 10
+  overstock_days: 60
+  min_opening_stock: 5
+  default_cost_ratio: 0.62 # fallback COGS ratio when category not in seed
+  # Trailing window of business days reprocessed each incremental run so that
+  # late-arriving rows are merged correctly (matches LATE_ARRIVING_LOOKBACK_DAYS).
+  late_reprocess_days: 3
+  # Statuses that count as realized sales (exclude canceled/unavailable)
+  valid_sale_statuses: ["delivered", "shipped", "invoiced", "processing", "approved"]
+
+models:
+  retail_elt:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  retail_elt:
+    +schema: seeds
+
+snapshots:
+  retail_elt:
+    +schema: snapshots

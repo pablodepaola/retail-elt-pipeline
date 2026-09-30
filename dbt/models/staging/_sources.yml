@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Immutable raw landing zone mirrored from the Parquet lake into DuckDB by the
+      load step. May contain overlapping snapshots of the same natural key across
+      ingest partitions (late-arriving re-scan); staging dedups to the latest.
+    schema: raw
+    loaded_at_field: "try_cast(_loaded_at as timestamp)"
+    freshness:
+      warn_after: { count: 36, period: hour }
+      error_after: { count: 72, period: hour }
+    tables:
+      - name: orders
+        description: Olist orders header (proxy for POS order header).
+        columns:
+          - name: order_id
+            description: Natural key for an order.
+          - name: order_purchase_timestamp
+            description: Business event time; drives the incremental watermark.
+      - name: order_items
+        description: Order line items (proxy for POS line items). One row per unit.
+      - name: products
+        description: Product master (proxy for item master).
+      - name: customers
+        description: Customer master.
+      - name: category_translation
+        description: PT->EN category name mapping.

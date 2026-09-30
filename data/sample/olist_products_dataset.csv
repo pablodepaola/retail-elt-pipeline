@@ -1,0 +1,11 @@
+product_id,product_category_name,product_name_lenght,product_description_lenght,product_photos_qty,product_weight_g,product_length_cm,product_height_cm,product_width_cm
+prod_0001,cama_mesa_banho,50,800,3,4127,23,26,24
+prod_0002,cama_mesa_banho,50,800,3,325,23,17,12
+prod_0003,beleza_saude,50,800,3,4123,25,18,30
+prod_0004,beleza_saude,50,800,3,2160,45,25,23
+prod_0005,esporte_lazer,50,800,3,3318,39,39,27
+prod_0006,esporte_lazer,50,800,3,2726,26,28,37
+prod_0007,informatica_acessorios,50,800,3,4273,39,11,35
+prod_0008,informatica_acessorios,50,800,3,2823,23,28,25
+prod_0009,relogios_presentes,50,800,3,3590,12,19,14
+prod_0010,relogios_presentes,50,800,3,332,26,40,31

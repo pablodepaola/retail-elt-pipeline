@@ -1,0 +1,25 @@
+version: 2
+
+seeds:
+  - name: seed_category_cost_ratio
+    description: >
+      SYNTHETIC cost-of-goods ratio per product category. Olist exposes price but
+      no cost, so margin is derived as price * cost_ratio. Clearly a proxy; values
+      are plausible retail COGS ratios, not real Olist data.
+    config:
+      column_types:
+        product_category_name: varchar
+        cost_ratio: double
+    columns:
+      - name: product_category_name
+        description: Olist Portuguese category key (joins to products).
+        data_tests:
+          - not_null
+          - unique
+      - name: cost_ratio
+        description: COGS as a fraction of sale price (0-1).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1

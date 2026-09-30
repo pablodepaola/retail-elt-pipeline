@@ -1,0 +1,10 @@
+[project]
+name = "retail-elt"
+version = "1.0.0"
+description = "Free-tier batch ELT + analytics warehouse (DuckDB + dbt -> Oracle APEX)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

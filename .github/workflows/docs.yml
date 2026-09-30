@@ -1,0 +1,62 @@
+name: dbt docs (GitHub Pages)
+
+# Builds the dbt docs site (clickable lineage graph + model/column docs + data
+# contracts + freshness) against the sample and publishes it to GitHub Pages.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dbt/**"
+      - "pipeline/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    env:
+      DBT_DUCKDB_PATH: ${{ github.workspace }}/data/warehouse/retail.duckdb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install + build a sample warehouse (so the catalog is populated)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          dbt deps --project-dir dbt --profiles-dir dbt
+          python -m pipeline.cli --sample --target ci run --dry-run
+      - name: Generate dbt docs
+        run: dbt docs generate --project-dir dbt --profiles-dir dbt --target ci
+      - name: Prepare site (static, with lineage)
+        run: |
+          mkdir -p site
+          cp dbt/target/index.html site/ 2>/dev/null || true
+          cp dbt/target/catalog.json site/ 2>/dev/null || true
+          cp dbt/target/manifest.json site/ 2>/dev/null || true
+          cp dbt/target/graph_summary.json site/ 2>/dev/null || true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-docs:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
